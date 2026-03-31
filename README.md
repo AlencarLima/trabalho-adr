@@ -72,7 +72,7 @@ python simulacao_final.py
 
 Ao final da execução, o script gera uma planilha com os dados consolidados:
 
-- `dados_finais_todos_cenarios2.xlsx`
+- `dados_finais.xlsx`
 
 A planilha inclui, entre outras colunas:
 
