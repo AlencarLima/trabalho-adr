@@ -1,12 +1,18 @@
 import pandas as pd
 import numpy as np
 import random 
+import os
+import matplotlib.pyplot as plt
 
 CHUNK_DURATION = 2.0 # Os pedaços recebidos tem duração de 2 segundos
 MAX_BUFFER_SEC = 25.0 # O buffer tem capacidade máxima de 25 segundos
 
 #          240p, 360p, 720p, 1080p, 4K (por exemplo)
 BITRATES = [500, 1500, 3000, 5000, 8000]
+
+DADOS_DIR = './dados'
+TABELAS_DIR = os.path.join(DADOS_DIR, 'tabelas')
+GRAFICOS_DIR = os.path.join(DADOS_DIR, 'graficos')
 
 def througput_based(banda_kbps, buffer_atual):
     """
@@ -225,6 +231,127 @@ def simulador_streaming(trace_rede, cenario_rede, nome_algoritmo):
     return pd.DataFrame(historico)
 
 
+def gerar_tabelas_comparativas(df):
+    df_tabela = df.copy()
+    df_tabela['Travamento (Stall)'] = df_tabela['Travamento (Stall)'].astype(int)
+
+    resumo_cenario_algoritmo = (
+        df_tabela
+        .groupby(['Cenário', 'Algoritmo'], as_index=False)
+        .agg(
+            media_bitrate_kbps=('Bitrate Escolhido (Kbps)', 'mean'),
+            mediana_bitrate_kbps=('Bitrate Escolhido (Kbps)', 'median'),
+            media_buffer_s=('Ocupação do Buffer (s)', 'mean'),
+            travamentos_totais=('Travamento (Stall)', 'sum'),
+            taxa_travamento_pct=('Travamento (Stall)', lambda x: x.mean() * 100),
+        )
+    )
+
+    resumo_cenario_algoritmo = resumo_cenario_algoritmo.round({
+        'media_bitrate_kbps': 2,
+        'mediana_bitrate_kbps': 2,
+        'media_buffer_s': 2,
+        'taxa_travamento_pct': 2,
+    })
+
+    resumo_algoritmo = (
+        df_tabela
+        .groupby('Algoritmo', as_index=False)
+        .agg(
+            media_bitrate_kbps=('Bitrate Escolhido (Kbps)', 'mean'),
+            media_buffer_s=('Ocupação do Buffer (s)', 'mean'),
+            travamentos_totais=('Travamento (Stall)', 'sum'),
+            taxa_travamento_pct=('Travamento (Stall)', lambda x: x.mean() * 100),
+        )
+    )
+
+    resumo_algoritmo = resumo_algoritmo.round({
+        'media_bitrate_kbps': 2,
+        'media_buffer_s': 2,
+        'taxa_travamento_pct': 2,
+    })
+
+    resumo_cenario_algoritmo.to_csv(
+        os.path.join(TABELAS_DIR, 'resumo_cenario_algoritmo.csv'),
+        index=False,
+    )
+    resumo_cenario_algoritmo.to_excel(
+        os.path.join(TABELAS_DIR, 'resumo_cenario_algoritmo.xlsx'),
+        index=False,
+    )
+
+    resumo_algoritmo.to_csv(
+        os.path.join(TABELAS_DIR, 'resumo_geral_algoritmo.csv'),
+        index=False,
+    )
+    resumo_algoritmo.to_excel(
+        os.path.join(TABELAS_DIR, 'resumo_geral_algoritmo.xlsx'),
+        index=False,
+    )
+
+
+def gerar_graficos_comparativos(df):
+    df_grafico = df.copy()
+    df_grafico['Travamento (Stall)'] = df_grafico['Travamento (Stall)'].astype(int)
+    nome_cenario_arquivo = {
+        'Estável': 'estavel',
+        'Volátil': 'volatil',
+        'Congestionamento': 'congestionamento',
+    }
+
+    bitrate_por_cenario = (
+        df_grafico
+        .groupby(['Cenário', 'Algoritmo'])['Bitrate Escolhido (Kbps)']
+        .mean()
+        .unstack()
+    )
+
+    ax = bitrate_por_cenario.plot(kind='bar', figsize=(10, 5))
+    ax.set_title('Bitrate medio por cenario e algoritmo')
+    ax.set_ylabel('Bitrate medio (Kbps)')
+    ax.set_xlabel('Cenario')
+    ax.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAFICOS_DIR, 'bitrate_medio_por_cenario.png'), dpi=150)
+    plt.close()
+
+    travamentos_por_cenario = (
+        df_grafico
+        .groupby(['Cenário', 'Algoritmo'])['Travamento (Stall)']
+        .sum()
+        .unstack()
+    )
+
+    ax = travamentos_por_cenario.plot(kind='bar', figsize=(10, 5))
+    ax.set_title('Travamentos totais por cenario e algoritmo')
+    ax.set_ylabel('Quantidade de travamentos')
+    ax.set_xlabel('Cenario')
+    ax.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAFICOS_DIR, 'travamentos_por_cenario.png'), dpi=150)
+    plt.close()
+
+    for cenario in df_grafico['Cenário'].unique():
+        filtro_cenario = df_grafico[df_grafico['Cenário'] == cenario]
+        buffer_por_tempo = (
+            filtro_cenario
+            .groupby(['Tempo (s)', 'Algoritmo'])['Ocupação do Buffer (s)']
+            .mean()
+            .unstack()
+        )
+
+        ax = buffer_por_tempo.plot(figsize=(10, 5))
+        ax.set_title(f'Ocupacao media do buffer ao longo do tempo - {cenario}')
+        ax.set_ylabel('Buffer medio (s)')
+        ax.set_xlabel('Tempo (s)')
+        ax.grid(alpha=0.3)
+        plt.tight_layout()
+        cenario_slug = nome_cenario_arquivo.get(cenario, cenario.lower())
+        nome_arquivo = f'buffer_ao_longo_do_tempo_{cenario_slug}.png'
+        plt.savefig(os.path.join(GRAFICOS_DIR, nome_arquivo), dpi=150)
+        plt.close()
+
+
 cenarios_teste = ['estável', 'volátil', 'congestionamento']
 algoritmos = ['Throughput-Based', 'Buffer-Based']
 
@@ -245,3 +372,8 @@ for cenario in cenarios_teste:
 df_final = pd.concat(dataframes, ignore_index=True)
 
 df_final.to_excel("./dados/dados_finais.xlsx", index=False)
+
+gerar_tabelas_comparativas(df_final)
+gerar_graficos_comparativos(df_final)
+
+print('Arquivos gerados com sucesso.')
