@@ -31,7 +31,9 @@ O script principal `simulacao_final.py`:
 ## Requisitos
 
 - Python 3.10+ (recomendado)
-- Bibliotecas:
+- Arquivo de dependências:
+  - `requirements.txt`
+- Bibliotecas utilizadas:
   - pandas
   - numpy
   - openpyxl (necessária para exportação .xlsx)
@@ -57,7 +59,7 @@ python -m venv .venv
 3. Instale as dependências:
 
 ```bash
-pip install pandas numpy openpyxl
+pip install -r requirements.txt
 ```
 
 4. Execute a simulação:
