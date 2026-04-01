@@ -46,7 +46,7 @@ def buffer_based(buffer_atual):
 
 
     RESERVA = 5.0
-    ZONA_CRESCIMENTO = 20.0
+    ZONA_CRESCIMENTO = 15.0
     ZONA_SEGURA = RESERVA + ZONA_CRESCIMENTO
 
 
