@@ -4,6 +4,10 @@ import random
 import os
 import matplotlib.pyplot as plt
 
+SEED = 12345
+random.seed(SEED)
+np.random.seed(SEED)
+
 CHUNK_DURATION = 2.0 # Os pedaços recebidos tem duração de 2 segundos
 MAX_BUFFER_SEC = 25.0 # O buffer tem capacidade máxima de 25 segundos
 
