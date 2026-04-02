@@ -1,7 +1,7 @@
 Cenário,Algoritmo,media_bitrate_kbps,mediana_bitrate_kbps,media_buffer_s,travamentos_totais,taxa_travamento_pct
-Congestionamento,Buffer-Based,732.5,500.0,3.27,146,24.33
-Congestionamento,Throughput-Based,1350.0,500.0,1.31,220,36.67
-Estável,Buffer-Based,2418.33,1500.0,11.74,19,3.17
-Estável,Throughput-Based,2338.33,1500.0,11.74,32,5.33
-Volátil,Buffer-Based,1608.33,1500.0,10.12,0,0.0
-Volátil,Throughput-Based,2216.67,1500.0,2.08,69,11.5
+Congestionamento,Buffer-Based,715.0,500.0,2.27,172,28.67
+Congestionamento,Throughput-Based,940.0,500.0,0.99,228,38.0
+Estável,Buffer-Based,6096.67,5000.0,17.51,0,0.0
+Estável,Throughput-Based,5553.33,5000.0,9.5,1,0.17
+Volátil,Buffer-Based,1765.0,1500.0,8.92,0,0.0
+Volátil,Throughput-Based,3633.33,1500.0,1.52,111,18.5
