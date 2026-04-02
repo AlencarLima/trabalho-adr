@@ -54,19 +54,17 @@ def buffer_based(buffer_atual):
     if buffer_atual <= RESERVA:
         return BITRATES[0]
     
-    # Se possui 25 segundos ou mais de buffer, requista o maior bitrate possível
+    # Se possui 20 segundos ou mais de buffer, requista o maior bitrate possível
     elif buffer_atual >= ZONA_SEGURA:
         return BITRATES[-1]
 
-    # Se tiver entre 6 e 24 segundos de buffer disponível (zona de crescimento), escolhe o bitrate de forma proporcional, em crescimento linear
+    # Se tiver entre 6 e 19 segundos de buffer disponível (zona de crescimento), escolhe o bitrate de forma proporcional, em crescimento linear
     else:
 
         # 1. Descobre a porcentagem de preenchimento desta zona (Gera um valor de 0.0 a 1.0)
-        # Ex: Se o buffer é 15s, ele está na metade da zona de crescimento (Fator = 0.5)
         fator = (buffer_atual - RESERVA) / ZONA_CRESCIMENTO
 
         # 2. Mapeia essa porcentagem para os índices da lista de bitrates (que vai de 0 a 4)
-        # Ex: 0.5 * 4 = Índice 2.0
         indice = fator * (len(BITRATES) - 1)
 
         # 3. Arredonda para o número inteiro mais próximo
@@ -99,12 +97,12 @@ def proximo_estado_rede(estado_atual, cenario):
             2: [0.30, 0.20, 0.50]
         }
     
-    # Cenário estável, onde a rede tende a se manter no estado que estiver no momento
+    # Cenário estável, onde a rede tende a manter um estado normal/ótimo, e se caí para ruim se recupera rápido
     else:
         matriz_transicao = {
-            0: [0.90, 0.10, 0.00],
-            1: [0.05, 0.90, 0.05],
-            2: [0.00, 0.10, 0.90]
+            0: [0.30, 0.70, 0.00], # Se ficar ruim, se recupera rápido
+            1: [0.05, 0.60, 0.35], # Tende a se manter normal, com boa chance de ir para ótimo
+            2: [0.00, 0.10, 0.90]  # Quando em ótimo, tenta se manter em ótimo, ocasionalmente voltando para normal
         }
     
     return np.random.choice([0,1,2], p=matriz_transicao[estado_atual])
@@ -122,7 +120,7 @@ def gerar_banda_atual(estado):
         banda = random.gauss(2500, 600) # Média de 2500Kbps e desvio padrão de 600Kbps
     
     else: # Ótima
-        banda = random.gauss(8000, 1000) # Média de 8000Kbps e desvio padrão de 1000Kbps
+        banda = random.gauss(10000, 1000) # Média de 10000Kbps e desvio padrão de 1000Kbps
 
 
     return max(100.0, banda)
